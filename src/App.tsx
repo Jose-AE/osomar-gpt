@@ -162,6 +162,7 @@ function App() {
 
           <InputGroup>
             <Input
+              isDisabled={loading}
               value={messageToSend}
               mr="10px"
               autoComplete="off"
@@ -176,6 +177,7 @@ function App() {
               }}
             />
             <IconButton
+              isDisabled={loading}
               onClick={() => {
                 sendMessage();
               }}
