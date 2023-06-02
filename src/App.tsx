@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
 import axios from "axios";
@@ -17,22 +17,43 @@ import {
   InputGroup,
   InputRightAddon,
   IconButton,
+  Avatar,
+  Spinner,
 } from "@chakra-ui/react";
 
 function MessageBox({ role, content }: { role: string; content: string }) {
   if (role === "system") {
     return <></>;
   }
+
+  const isUser = role === "user";
+
   return (
-    <Text
-      m="10px"
-      borderRadius="10px"
-      bg={"gray.600"}
-      p="10px"
-      textAlign={role === "user" ? "right" : "left"}
-    >
-      {content}
-    </Text>
+    <>
+      {role === "assistant" ? (
+        <Avatar
+          ml="10px"
+          size="sm"
+          src="https://pps.whatsapp.net/v/t61.24694-24/328642750_1177380842956575_1180015993516765660_n.jpg?ccb=11-4&oh=01_AdTZUQbhoPgatQzIeHGJTAUxlheWtMI4s3ZVWd5lP5yDDg&oe=648695F9"
+        />
+      ) : null}
+
+      <Flex
+        h="auto"
+        m={2}
+        direction="column"
+        align={isUser ? "flex-end" : "flex-start"}
+      >
+        <Box
+          height="auto"
+          maxW={`${Math.min(300, content.length * 20)}px`}
+          bg="gray.600"
+          borderRadius={isUser ? "10px 0px 10px 10px" : "0 10px 10px 10px"}
+        >
+          <Text p={2}>{content}</Text>
+        </Box>
+      </Flex>
+    </>
   );
 }
 
@@ -42,6 +63,8 @@ interface ChatlogMessageInterface {
 }
 
 function App() {
+  const [loading, setLoading] = useState(false);
+
   const [chatlog, setChatlog] = useState<ChatlogMessageInterface[]>([
     { role: "system", content: PROMPT },
   ]);
@@ -59,6 +82,7 @@ function App() {
     ]);
 
     setMessageToSend("");
+    setLoading(true);
 
     axios
       .post(
@@ -76,31 +100,49 @@ function App() {
           ...oldChatlog,
           { role: "assistant", content: res.data.choices[0].message.content },
         ]);
+        window.scrollTo({
+          top: -100,
+        });
         //console.log(chatlog);
-        console.log(res.data.choices[0].message.content);
+        //console.log(res.data.choices[0].message.content);
+        setLoading(false);
       })
       .catch((err) => {});
   }
 
+  const chatContainerRef = useRef(null);
+
   useEffect(() => {
+    if (chatContainerRef?.current) {
+      (chatContainerRef.current as HTMLElement).scrollTop = (
+        chatContainerRef.current as HTMLElement
+      ).scrollHeight;
+    }
     console.log(chatlog);
   }, [chatlog]);
 
   return (
-    <Flex minH={"100vh"} align={"center"} justify={"center"} bg="gray.800">
-      <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
+    <Flex align={"center"} justify={"center"} bg="gray.800">
+      <Stack spacing={8} mx={"auto"} w="100%" py={12} px={6}>
         <Stack align={"center"}>
           <Heading fontSize={"4xl"}>OsomarGPT</Heading>
         </Stack>
         <Box
-          h="500px"
+          h="78vh"
           rounded={"lg"}
           bg="gray.700"
           boxShadow={"lg"}
-          w="500px"
+          w="100%"
           p={4}
         >
           <Flex
+            ref={chatContainerRef}
+            sx={{
+              "::-webkit-scrollbar": {
+                display: "none",
+              },
+            }}
+            overflowY="auto"
             flexDirection="column"
             mb="10px"
             borderRadius="10px"
