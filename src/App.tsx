@@ -72,7 +72,6 @@ function App() {
   const [messageToSend, setMessageToSend] = useState<string>("");
 
   async function sendMessage() {
-    console.log(messageToSend);
     if (messageToSend == "") {
       return;
     }
@@ -118,7 +117,6 @@ function App() {
         chatContainerRef.current as HTMLElement
       ).scrollHeight;
     }
-    console.log(chatlog);
   }, [chatlog]);
 
   return (
