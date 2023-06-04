@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import reactLogo from "./assets/react.svg";
 import "./App.css";
 import axios from "axios";
 import PROMPT from "./prompt";
@@ -8,19 +7,14 @@ import { TbTrash } from "react-icons/tb";
 
 import {
   Box,
-  Button,
-  Center,
   Flex,
   Heading,
-  Link,
   Text,
   Stack,
   Input,
   InputGroup,
-  InputRightAddon,
   IconButton,
   Avatar,
-  Spinner,
 } from "@chakra-ui/react";
 
 function MessageBox({ role, content }: { role: string; content: string }) {
@@ -73,14 +67,31 @@ function App() {
 
   const [messageToSend, setMessageToSend] = useState<string>("");
 
+  // load chatlog
+  useEffect(() => {
+    if (!localStorage.getItem("chatlog")) {
+      localStorage.setItem(
+        "chatlog",
+        JSON.stringify([{ role: "system", content: PROMPT }])
+      );
+    }
+    setChatlog(JSON.parse(localStorage.getItem("chatlog") as any));
+  }, []);
+
   async function sendMessage() {
     if (messageToSend == "") {
       return;
     }
-    setChatlog((oldChatlog) => [
-      ...oldChatlog,
-      { role: "user", content: messageToSend },
-    ]);
+    setChatlog((oldChatlog) => {
+      localStorage.setItem(
+        "chatlog",
+        JSON.stringify([
+          ...oldChatlog,
+          { role: "user", content: messageToSend },
+        ])
+      );
+      return [...oldChatlog, { role: "user", content: messageToSend }];
+    });
 
     setMessageToSend("");
     setLoading(true);
@@ -97,13 +108,24 @@ function App() {
         }
       )
       .then((res) => {
-        setChatlog((oldChatlog) => [
-          ...oldChatlog,
-          { role: "assistant", content: res.data.choices[0].message.content },
-        ]);
-        window.scrollTo({
-          top: -100,
+        setChatlog((oldChatlog) => {
+          localStorage.setItem(
+            "chatlog",
+            JSON.stringify([
+              ...oldChatlog,
+              {
+                role: "assistant",
+                content: res.data.choices[0].message.content,
+              },
+            ])
+          );
+
+          return [
+            ...oldChatlog,
+            { role: "assistant", content: res.data.choices[0].message.content },
+          ];
         });
+
         //console.log(chatlog);
         //console.log(res.data.choices[0].message.content);
         setLoading(false);
@@ -123,68 +145,83 @@ function App() {
 
   return (
     <Flex align={"center"} justify={"center"} bg="gray.800">
-      <Stack spacing={8} mx={"auto"} w="100%" py={12} px={6}>
+      <Stack spacing={8} w="100%" mt="20px" px={6}>
         <Stack align={"center"}>
           <Heading fontSize={"4xl"}>OsomarGPT</Heading>
         </Stack>
         <Box
-          h="78vh"
+          h={`calc(100vh - ${120}px)`}
           rounded={"lg"}
           bg="gray.700"
           boxShadow={"lg"}
           w="100%"
           p={4}
         >
-          <Flex
-            ref={chatContainerRef}
-            sx={{
-              "::-webkit-scrollbar": {
-                display: "none",
-              },
-            }}
-            overflowY="auto"
-            flexDirection="column"
-            mb="10px"
-            borderRadius="10px"
-            bg="whiteAlpha.100"
-            h="90%"
-          >
-            {chatlog.map((message, i) => {
-              return (
-                <MessageBox
-                  key={i}
-                  content={message.content}
-                  role={message.role}
-                />
-              );
-            })}
-          </Flex>
+          <Flex h="100%" direction="column">
+            <Flex
+              ref={chatContainerRef}
+              sx={{
+                "::-webkit-scrollbar": {
+                  display: "none",
+                },
+              }}
+              minH={`calc(100% - ${60}px)`}
+              overflowY="auto"
+              flexDirection="column"
+              mb="20px"
+              borderRadius="10px"
+              bg="whiteAlpha.100"
+            >
+              {chatlog.map((message, i) => {
+                return (
+                  <MessageBox
+                    key={i}
+                    content={message.content}
+                    role={message.role}
+                  />
+                );
+              })}
+            </Flex>
 
-          <InputGroup>
-            <Input
-              isDisabled={loading}
-              value={messageToSend}
-              mr="10px"
-              autoComplete="off"
-              placeholder="Type a message"
-              onChange={(e) => {
-                setMessageToSend(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+            <InputGroup>
+              <Input
+                isDisabled={loading}
+                value={messageToSend}
+                mr="10px"
+                autoComplete="off"
+                placeholder="Type a message"
+                onChange={(e) => {
+                  setMessageToSend(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    sendMessage();
+                  }
+                }}
+              />
+              <IconButton
+                isDisabled={loading}
+                onClick={() => {
                   sendMessage();
-                }
-              }}
-            />
-            <IconButton
-              isDisabled={loading}
-              onClick={() => {
-                sendMessage();
-              }}
-              aria-label="Send"
-              icon={<IoSend />}
-            />
-          </InputGroup>
+                }}
+                aria-label="Send"
+                icon={<IoSend />}
+              />
+              <IconButton
+                ml="10px"
+                isDisabled={loading}
+                onClick={() => {
+                  localStorage.setItem(
+                    "chatlog",
+                    JSON.stringify([{ role: "system", content: PROMPT }])
+                  );
+                  setChatlog([{ role: "system", content: PROMPT }]);
+                }}
+                aria-label="Send"
+                icon={<TbTrash />}
+              />
+            </InputGroup>
+          </Flex>
         </Box>
       </Stack>
     </Flex>
