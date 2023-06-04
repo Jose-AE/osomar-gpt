@@ -4,6 +4,8 @@ import "./App.css";
 import axios from "axios";
 import PROMPT from "./prompt";
 import { IoSend } from "react-icons/io5";
+import { TbTrash } from "react-icons/tb";
+
 import {
   Box,
   Button,
