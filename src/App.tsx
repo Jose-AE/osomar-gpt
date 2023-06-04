@@ -15,6 +15,7 @@ import {
   InputGroup,
   IconButton,
   Avatar,
+  useToast,
 } from "@chakra-ui/react";
 
 function MessageBox({ role, content }: { role: string; content: string }) {
@@ -59,6 +60,8 @@ interface ChatlogMessageInterface {
 }
 
 function App() {
+  const toast = useToast();
+
   const [loading, setLoading] = useState(false);
 
   const [chatlog, setChatlog] = useState<ChatlogMessageInterface[]>([
@@ -130,7 +133,16 @@ function App() {
         //console.log(res.data.choices[0].message.content);
         setLoading(false);
       })
-      .catch((err) => {});
+      .catch((err) => {
+        toast({
+          title: "Out of tokens",
+          description: "API Has ran out of tokens, contact creator to add more",
+          status: "error",
+          position: "top-right",
+          duration: 5000,
+          isClosable: true,
+        });
+      });
   }
 
   const chatContainerRef = useRef(null);
