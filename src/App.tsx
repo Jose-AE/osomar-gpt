@@ -64,19 +64,14 @@ function App() {
 
   const [loading, setLoading] = useState(false);
 
-  const [chatlog, setChatlog] = useState<ChatlogMessageInterface[]>([
-    { role: "system", content: PROMPT },
-  ]);
+  const [chatlog, setChatlog] = useState<ChatlogMessageInterface[]>([]);
 
   const [messageToSend, setMessageToSend] = useState<string>("");
 
   // load chatlog
   useEffect(() => {
     if (!localStorage.getItem("chatlog")) {
-      localStorage.setItem(
-        "chatlog",
-        JSON.stringify([{ role: "system", content: PROMPT }])
-      );
+      localStorage.setItem("chatlog", JSON.stringify([]));
     }
     setChatlog(JSON.parse(localStorage.getItem("chatlog") as any));
   }, []);
@@ -104,7 +99,11 @@ function App() {
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-3.5-turbo",
-          messages: [...chatlog, { role: "user", content: messageToSend }],
+          messages: [
+            { role: "system", content: PROMPT },
+            ...chatlog,
+            { role: "user", content: messageToSend },
+          ],
         },
         {
           headers: { Authorization: "Bearer " + import.meta.env.VITE_API_KEY },
@@ -223,11 +222,8 @@ function App() {
                 ml="10px"
                 isDisabled={loading}
                 onClick={() => {
-                  localStorage.setItem(
-                    "chatlog",
-                    JSON.stringify([{ role: "system", content: PROMPT }])
-                  );
-                  setChatlog([{ role: "system", content: PROMPT }]);
+                  localStorage.setItem("chatlog", JSON.stringify([]));
+                  setChatlog([]);
                 }}
                 aria-label="Send"
                 icon={<TbTrash />}
