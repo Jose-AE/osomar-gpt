@@ -68,13 +68,14 @@ with open("Python/train.jsonl", "w", encoding="utf8") as json:
 
 
 # create traning data (test)
-with open("Python/test_train.txt", "w", encoding="utf8") as json:
+with open("Python/test_train.txt", "w", encoding="utf8") as txt:
     messages = ""
     for i, message in enumerate(json_message_list):
-        if message["sender"] == "Osmar":
-            messages += f'[{message["message"]}]'
+        messages += (
+            f'{"M"if message["sender"] == "Jose Luis" else "R"}-{message["message"]}\n'
+        )
 
-    json.write(messages)
+    txt.write(messages)
 
 
 """

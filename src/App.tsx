@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import axios from "axios";
-import PROMPT from "./prompt";
+import USERS from "./users";
 import { IoSend } from "react-icons/io5";
 import { TbTrash } from "react-icons/tb";
 
@@ -16,9 +16,18 @@ import {
   IconButton,
   Avatar,
   useToast,
+  Select,
 } from "@chakra-ui/react";
 
-function MessageBox({ role, content }: { role: string; content: string }) {
+function MessageBox({
+  role,
+  content,
+  pfp,
+}: {
+  role: string;
+  content: string;
+  pfp: string;
+}) {
   if (role === "system") {
     return <></>;
   }
@@ -27,13 +36,7 @@ function MessageBox({ role, content }: { role: string; content: string }) {
 
   return (
     <>
-      {role === "assistant" ? (
-        <Avatar
-          ml="10px"
-          size="sm"
-          src="https://pps.whatsapp.net/v/t61.24694-24/328642750_1177380842956575_1180015993516765660_n.jpg?ccb=11-4&oh=01_AdTZUQbhoPgatQzIeHGJTAUxlheWtMI4s3ZVWd5lP5yDDg&oe=648695F9"
-        />
-      ) : null}
+      {role === "assistant" ? <Avatar ml="10px" size="sm" src={pfp} /> : null}
 
       <Flex
         h="auto"
@@ -62,18 +65,21 @@ interface ChatlogMessageInterface {
 function App() {
   const toast = useToast();
 
+  const [user, setUser] = useState(0);
   const [loading, setLoading] = useState(false);
-
   const [chatlog, setChatlog] = useState<ChatlogMessageInterface[]>([]);
-
   const [messageToSend, setMessageToSend] = useState<string>("");
 
-  // load chatlog
+  // load chatlogs
   useEffect(() => {
-    if (!localStorage.getItem("chatlog")) {
-      localStorage.setItem("chatlog", JSON.stringify([]));
+    for (let user of USERS) {
+      if (!localStorage.getItem(`${user.name}_chatlog`)) {
+        localStorage.setItem(`${user.name}_chatlog`, JSON.stringify([]));
+      }
+      setChatlog(
+        JSON.parse(localStorage.getItem(`${user.name}_chatlog`) as any)
+      );
     }
-    setChatlog(JSON.parse(localStorage.getItem("chatlog") as any));
   }, []);
 
   async function sendMessage() {
@@ -82,7 +88,7 @@ function App() {
     }
     setChatlog((oldChatlog) => {
       localStorage.setItem(
-        "chatlog",
+        `${USERS[user].name}_chatlog`,
         JSON.stringify([
           ...oldChatlog,
           { role: "user", content: messageToSend },
@@ -100,7 +106,7 @@ function App() {
         {
           model: "gpt-3.5-turbo",
           messages: [
-            { role: "system", content: PROMPT },
+            { role: "system", content: USERS[user].systemPrompt },
             ...chatlog,
             { role: "user", content: messageToSend },
           ],
@@ -112,7 +118,7 @@ function App() {
       .then((res) => {
         setChatlog((oldChatlog) => {
           localStorage.setItem(
-            "chatlog",
+            `${USERS[user].name}_chatlog`,
             JSON.stringify([
               ...oldChatlog,
               {
@@ -154,14 +160,35 @@ function App() {
     }
   }, [chatlog]);
 
+  //update chatlog on user change
+  useEffect(() => {
+    setChatlog(
+      JSON.parse(localStorage.getItem(`${USERS[user].name}_chatlog`) as any)
+    );
+  }, [user]);
+
   return (
     <Flex align={"center"} justify={"center"} bg="gray.800">
       <Stack spacing={8} w="100%" mt="20px" px={6}>
         <Stack align={"center"}>
-          <Heading fontSize={"4xl"}>OsomarGPT</Heading>
+          <Select
+            w="auto"
+            textAlign="center"
+            h="100px"
+            fontWeight="bold"
+            fontSize={"4xl"}
+            value={user}
+            onChange={(e) => setUser(Number(e.target.value))}
+          >
+            {USERS.map((user, i) => (
+              <option key={i} value={i}>
+                {user.name}
+              </option>
+            ))}
+          </Select>
         </Stack>
         <Box
-          h={`calc(100vh - ${120}px)`}
+          h={`calc(100vh - ${160}px)`}
           rounded={"lg"}
           bg="gray.700"
           boxShadow={"lg"}
@@ -186,6 +213,7 @@ function App() {
               {chatlog.map((message, i) => {
                 return (
                   <MessageBox
+                    pfp={USERS[user].pfp}
                     key={i}
                     content={message.content}
                     role={message.role}
@@ -222,7 +250,10 @@ function App() {
                 ml="10px"
                 isDisabled={loading}
                 onClick={() => {
-                  localStorage.setItem("chatlog", JSON.stringify([]));
+                  localStorage.setItem(
+                    `${USERS[user].name}_chatlog`,
+                    JSON.stringify([])
+                  );
                   setChatlog([]);
                 }}
                 aria-label="Send"
